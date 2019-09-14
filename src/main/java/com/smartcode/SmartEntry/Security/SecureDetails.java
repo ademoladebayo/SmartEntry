@@ -28,11 +28,11 @@ public class SecureDetails {
         StringBuilder sb = new StringBuilder();
         for (byte b : hashInBytes) {
             sb.append(String.format("%02x", b));
-        }
-        System.out.println(sb.toString().matches("501a9bc6342eaeae9298719ab9347b018fe6a3b87c69cd10145dc7d0093937bf"));*/
-       // System.out.println(SHA256of("anatomyadmin"));
-       SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
-        System.out.println(df.format(new Date()));
+        }*/
+        System.out.println(SHA256of("cit").matches("97d232947baf0cadfde266570ccf31038662fcef6636e57979e10f1f0451ec40"));
+       System.out.println(SHA256of("cit"));
+      /* SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+        System.out.println(df.format(new Date()));*/
 
     }
 

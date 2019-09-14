@@ -15,9 +15,6 @@ import java.io.IOException;
 import java.net.ProtocolException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
-import static org.apache.logging.log4j.message.MapMessage.MapFormat.JSON;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -69,7 +66,7 @@ public class SmartController {
 
         } else if (id.equals("2")) {
             Department_Table DT = new Department_Table();
-            String tok[] = username.toUpperCase().split("admin");
+            String tok[] = username.toUpperCase().split("ADMIN");
             String token = SecureDetails.SHA256of(tok[0]);
             String res = DT.isUserAuthentic(username, password);
             if (res.contains("not")) {
@@ -85,7 +82,7 @@ public class SmartController {
 
         } else if (id.equals("3")) {
             Faculty_Table FT = new Faculty_Table();
-            String tok[] = username.toUpperCase().split("admin");
+            String tok[] = username.toUpperCase().split("ADMIN");
             String token = SecureDetails.SHA256of(tok[0]);
             String res = FT.isUserAuthentic(username, password);
             if (res.contains("not")) {
@@ -261,12 +258,13 @@ public class SmartController {
         HashMap<String, String> res = new HashMap<>();
         String token = req.get("token");
         String visitor_id = req.get("visitor_id");
+        String time_in = req.get("time_in");
 
         String priviledge = SecureDetails.SHA256of("any");
 
         if (token.matches(priviledge)) {
             Visitor_Table ST = new Visitor_Table();
-            return ST.searchVisitor(visitor_id);
+            return ST.searchVisitor(visitor_id, time_in);
         } else {
             res.put("success", "false");
             res.put("message", "Priviledge Denied");
@@ -316,7 +314,7 @@ public class SmartController {
         }
     }
 
- /*   @GetMapping(value = "/statistics/{token}", produces = MediaType.APPLICATION_JSON_VALUE)
+    /*   @GetMapping(value = "/statistics/{token}", produces = MediaType.APPLICATION_JSON_VALUE)
     public String statistics(@PathVariable(value = "token") String token) throws NoSuchAlgorithmException, ProtocolException, IOException {
 
         String priviledge = SecureDetails.SHA256of("any");

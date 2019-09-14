@@ -6,6 +6,7 @@
 package com.smartcode.SmartEntry.DBHelper;
 
 import static com.smartcode.SmartEntry.DBHelper.Visitor_Table.response;
+import com.smartcode.SmartEntry.Notification.SmartNotify;
 import com.smartcode.SmartEntry.Security.SecureDetails;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -44,6 +45,8 @@ public class Student_Table {
     }
 
     public HashMap search(String student_id, String status) {
+        String parent_mobile="", parent_email="";
+          String names = "";
         try {
             URL url = new URL("https://smartentry-e8e2c.firebaseio.com/student_details.json");
             conn = (HttpURLConnection) url.openConnection();
@@ -64,8 +67,10 @@ public class Student_Table {
                         String student = stdDetails.getString("matric_no");
                         if (student.equals(student_id)) {
                             studentPosition = i;
-
-                            return UpdateStudentStatus(studentPosition, status, student_id);
+                            parent_mobile = stdDetails.getString("parent_mobile");
+                            parent_email = stdDetails.getString("parent_email");
+                            names = stdDetails.getString("first_name")+"-"+stdDetails.getString("last_name")+"-"+stdDetails.getString("matric_no")+"-"+stdDetails.getString("parent_email");
+                            return UpdateStudentStatus(studentPosition, status, student_id,parent_mobile, parent_email,names);
                         }
 
                     }
@@ -81,7 +86,7 @@ public class Student_Table {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        return UpdateStudentStatus(studentPosition, status, student_id);
+        return UpdateStudentStatus(studentPosition, status, student_id, parent_mobile, parent_email,names);
     }
 
     public String isUserAuthentic(String username, String password) throws NoSuchAlgorithmException, MalformedURLException, ProtocolException, IOException {
@@ -129,7 +134,7 @@ public class Student_Table {
         return "User is not Authentic";
     }
 
-    public HashMap UpdateStudentStatus(int i, String status, String stud) {
+    public HashMap UpdateStudentStatus(int i, String status, String stud,String parent_mobile,String parent_email,String names) {
         String sta = status.equals("0") ? "absent" : "present";
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
         json.put("Time", df.format(new Date()));
@@ -162,6 +167,19 @@ public class Student_Table {
                 JSONObject myResponse = new JSONObject(result);
                 String time = myResponse.getString("Time");
                 String st = myResponse.getString("Status");
+                String name [] = names.split("-");
+                if (status.equals("0")) {
+                    // Notify the parent
+                    SmartNotify sn = new SmartNotify ();
+                    String message = "Dear Guardian, \nyour ward "+ name[0].toUpperCase() +" "+name[1].toUpperCase()+", with Matriculation number "+name[2]+" got SIGNED-OUT of the school at exactly " + json.getString("Time")+". \n Notificaion is for you to keep track of your ward's  movement in and out of the school.\n\nBOWEN UNIVERSITY, \nIWO  OSUN STATE. ";
+                    sn.sendEmail( name[3],"EXIT NOTIFICATION",message);
+                } else {
+                    // Notify the parent
+                    SmartNotify sn = new SmartNotify ();
+                    String message = "Dear Guardian, \nyour ward "+name[0].toUpperCase() +" "+name[1].toUpperCase()+", with Matriculation number "+name[2]+" got SIGNED into the school at exactly " + json.getString("Time")+". \n Notificaion is for you to keep track of your ward's  movement in and out of the school.\n\nBOWEN UNIVERSITY, \nIWO  OSUN STATE. ";
+                    sn.sendEmail( name[3],"ENTRY NOTIFICATION",message);
+
+                }
                 HashMap<String, String> resp = new HashMap<>();
                 resp.put("student_id", stud);
                 resp.put("success", "true");
@@ -230,7 +248,7 @@ public class Student_Table {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-      
+
         return output;
     }
 
@@ -283,7 +301,7 @@ public class Student_Table {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        
+
         return output;
     }
 
@@ -295,13 +313,13 @@ public class Student_Table {
             conn.setConnectTimeout(5000);
             conn.setReadTimeout(5000);
             resCode = conn.getResponseCode();
-             System.out.println(resCode);
+            System.out.println(resCode);
             if (resCode == 200) {
                 try {
                     InputStream in = new BufferedInputStream(conn.getInputStream());
                     response = IOUtils.toString(in);
                     System.out.println(response);
-                return    response;
+                    return response;
                 } catch (IOException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
@@ -313,17 +331,17 @@ public class Student_Table {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        StringBuilder sb= new StringBuilder();
+        StringBuilder sb = new StringBuilder();
         sb.append("[{").append("\"success\"").append(":").append("\"false\",\n");
         sb.append(" \"message\" ").append(":").append("\"Service Timed out....Kindly Re-try\"\n");
         sb.append("}]");
-      
+
         return sb.toString();
     }
 
     public HashMap registerStudent(HashMap<String, String> req) {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
-       
+
         // JSON DATA TO POST
         json.put("Department", req.get("Department"));
         json.put("Faculty", req.get("Faculty"));
@@ -333,12 +351,13 @@ public class Student_Table {
         json.put("matric_no", req.get("matric_no"));
         json.put("Time", df.format(new Date()));
         json.put("sex", req.get("sex"));
+        json.put("parent_mobile", req.get("parent_mobile"));
+        json.put("parent_email", req.get("parent_email"));
+         json.put("student_level", req.get("student_level"));
         int totalStudent = getTotalStudent();
-        
-        
 
         try {
-            URL url = new URL("https://smartentry-e8e2c.firebaseio.com/student_details/"+ totalStudent+".json");
+            URL url = new URL("https://smartentry-e8e2c.firebaseio.com/student_details/" + totalStudent + ".json");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setConnectTimeout(5000);
             conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
@@ -362,11 +381,14 @@ public class Student_Table {
                 InputStream in = new BufferedInputStream(conn.getInputStream());
                 String result = IOUtils.toString(in, "UTF-8");
                 JSONObject myResponse = new JSONObject(result);
-                
+                // Notify the parent
+                SmartNotify sn = new SmartNotify ();
+                String message = "Dear Guardian, \nyour ward "+ json.getString("first_name").toUpperCase() +" "+json.getString("last_name").toUpperCase()+", with Matriculation number "+json.getString("matric_no")+" got SIGNED into the school at exactly " + json.getString("Time")+". \n Notificaion is for you to keep track of your ward's  movement in and out of the school.\n\nBOWEN UNIVERSITY, \nIWO  OSUN STATE. ";
+                sn.sendEmail(json.getString("parent_email"),"ENTRY NOTIFICATION",message);
                 HashMap<String, String> resp = new HashMap<>();
                 resp.put("Student_name", req.get("first_name"));
                 resp.put("success", "true");
-                 resp.put("status", "present");
+                resp.put("status", "present");
                 resp.put("message", "Registration Successful");
                 resp.put("time", json.getString("Time"));
                 in.close();
@@ -383,8 +405,8 @@ public class Student_Table {
     }
 
     public int getTotalStudent() {
-        int count=0;
-         try {
+        int count = 0;
+        try {
             URL url = new URL("https://smartentry-e8e2c.firebaseio.com/student_details.json");
             conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
@@ -397,9 +419,9 @@ public class Student_Table {
                     response = IOUtils.toString(in);
                     // JSONObject details = new JSONObject(response);
                     JSONArray students = new JSONArray(response);
-                   
+
                     for (int i = 0; i < students.length(); i++) {
-                      count++;
+                        count++;
                     }
 
                 } catch (IOException e) {
@@ -413,18 +435,17 @@ public class Student_Table {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-     
-        
+
         return count;
     }
 
     public int getTotalStudents() {
-     return   getTotalStudent();
+        return getTotalStudent();
     }
 
     public int getTotalStudentsPresent() {
-       int count=0;
-         try {
+        int count = 0;
+        try {
             URL url = new URL("https://smartentry-e8e2c.firebaseio.com/student_details.json");
             conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
@@ -437,15 +458,15 @@ public class Student_Table {
                     response = IOUtils.toString(in);
                     // JSONObject details = new JSONObject(response);
                     JSONArray students = new JSONArray(response);
-                   
+
                     for (int i = 0; i < students.length(); i++) {
                         JSONObject student = students.getJSONObject(i);
                         String status = student.getString("Status");
-                        
-                        if(status.equals("present")){
-                         count++;
+
+                        if (status.equals("present")) {
+                            count++;
                         }
-                     
+
                     }
 
                 } catch (IOException e) {
@@ -459,14 +480,13 @@ public class Student_Table {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-     
-        
+
         return count;
     }
 
     public int getTotalStudentsAbsent() {
-        int count=0;
-         try {
+        int count = 0;
+        try {
             URL url = new URL("https://smartentry-e8e2c.firebaseio.com/student_details.json");
             conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
@@ -479,15 +499,15 @@ public class Student_Table {
                     response = IOUtils.toString(in);
                     // JSONObject details = new JSONObject(response);
                     JSONArray students = new JSONArray(response);
-                   
+
                     for (int i = 0; i < students.length(); i++) {
                         JSONObject student = students.getJSONObject(i);
                         String status = student.getString("Status");
-                        
-                        if(status.equals("absent")){
-                         count++;
+
+                        if (status.equals("absent")) {
+                            count++;
                         }
-                     
+
                     }
 
                 } catch (IOException e) {
@@ -501,10 +521,8 @@ public class Student_Table {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-     
-        
+
         return count;
     }
 
-   
 }

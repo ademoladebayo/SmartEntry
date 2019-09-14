@@ -38,7 +38,7 @@ public class Visitor_Table {
     String amount;
     JSONObject json = new JSONObject();
     public int studentPosition;
-     public int visitorPosition;
+    public int visitorPosition;
 
     public static void main(String[] args) {
         // System.out.println(verifyCscode("PC006", "1"));
@@ -185,7 +185,7 @@ public class Visitor_Table {
 
     public HashMap saveRequest(HashMap<String, String> req) {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
-       
+
         // JSON DATA TO POST
         json.put("Reason_for_meet", req.get("Reason_for_meet"));
         json.put("Who_to_meet", req.get("Who_to_meet"));
@@ -194,13 +194,14 @@ public class Visitor_Table {
         json.put("lastName", req.get("lastName"));
         json.put("email", req.get("email"));
         json.put("mobile", req.get("mobile"));
+        //Fixed
         json.put("time_in", df.format(new Date()));
-        json.put("time_out", " Not yet");
-        json.put("id", req.get("mobile"));
+        json.put("time_out", "Not yet");
         int totalVisitor = getTotalVisitor();
+        json.put("id", String.valueOf(totalVisitor + 1));
 
         try {
-            URL url = new URL("https://smartentry-e8e2c.firebaseio.com/visitor_table/"+ totalVisitor+".json");
+            URL url = new URL("https://smartentry-e8e2c.firebaseio.com/visitor_table/" + totalVisitor + ".json");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setConnectTimeout(5000);
             conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
@@ -224,10 +225,10 @@ public class Visitor_Table {
                 InputStream in = new BufferedInputStream(conn.getInputStream());
                 String result = IOUtils.toString(in, "UTF-8");
                 JSONObject myResponse = new JSONObject(result);
-                
+
                 HashMap<String, String> resp = new HashMap<>();
                 resp.put("visitor_name", req.get("firstName"));
-                resp.put("id", req.get("mobile"));
+                resp.put("id", json.getString("id"));
                 resp.put("success", "true");
                 resp.put("message", "Request Saved");
                 resp.put("time_in", json.getString("time_in"));
@@ -245,8 +246,8 @@ public class Visitor_Table {
     }
 
     public int getTotalVisitor() {
-        int count=0;
-         try {
+        int count = 0;
+        try {
             URL url = new URL("https://smartentry-e8e2c.firebaseio.com/visitor_table.json");
             conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
@@ -259,9 +260,9 @@ public class Visitor_Table {
                     response = IOUtils.toString(in);
                     // JSONObject details = new JSONObject(response);
                     JSONArray visitor = new JSONArray(response);
-                   
+
                     for (int i = 0; i < visitor.length(); i++) {
-                      count++;
+                        count++;
                     }
 
                 } catch (IOException e) {
@@ -275,8 +276,7 @@ public class Visitor_Table {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-     
-        
+
         return count;
     }
 
@@ -288,13 +288,13 @@ public class Visitor_Table {
             conn.setConnectTimeout(5000);
             conn.setReadTimeout(5000);
             resCode = conn.getResponseCode();
-             System.out.println(resCode);
+            System.out.println(resCode);
             if (resCode == 200) {
                 try {
                     InputStream in = new BufferedInputStream(conn.getInputStream());
                     response = IOUtils.toString(in);
                     System.out.println(response);
-                return    response;
+                    return response;
                 } catch (IOException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
@@ -306,18 +306,17 @@ public class Visitor_Table {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        StringBuilder sb= new StringBuilder();
+        StringBuilder sb = new StringBuilder();
         sb.append("[{").append("\"success\"").append(":").append("\"false\",\n");
         sb.append(" \"message\" ").append(":").append("\"Service Timed out....Kindly Re-try\"\n");
         sb.append("}]");
-      
+
         return sb.toString();
     }
 
-    public HashMap signOutVisitor(int p,String visitor_id) {
+    public HashMap signOutVisitor(int p, String visitor_id) {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
         json.put("time_out", df.format(new Date()));
-      
 
         try {
             URL url = new URL("https://smartentry-e8e2c.firebaseio.com/visitor_table/" + p + ".json");
@@ -344,7 +343,7 @@ public class Visitor_Table {
                 InputStream in = new BufferedInputStream(conn.getInputStream());
                 String result = IOUtils.toString(in, "UTF-8");
                 JSONObject myResponse = new JSONObject(result);
-               
+
                 HashMap<String, String> resp = new HashMap<>();
                 resp.put("visitor_id", visitor_id);
                 resp.put("success", "true");
@@ -363,8 +362,8 @@ public class Visitor_Table {
         return resp;
     }
 
-    public HashMap searchVisitor(String visitor_id) {
-         try {
+    public HashMap searchVisitor(String visitor_id , String time) {
+        try {
             URL url = new URL("https://smartentry-e8e2c.firebaseio.com/visitor_table.json");
             conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
@@ -382,9 +381,10 @@ public class Visitor_Table {
                         JSONObject visitor = visitors.getJSONObject(i);
                         System.out.println("PROTOCOL 1 :" + visitor);
                         String id = visitor.getString("mobile");
-                        if (id.equals(visitor_id)) {
-                            visitorPosition  = i;
-                            return signOutVisitor(visitorPosition,visitor_id);
+                        String time_in = visitor.getString("time_in");
+                        if (id.equals(visitor_id) && time.equals(time_in)) {
+                            visitorPosition = i;
+                            return signOutVisitor(visitorPosition, visitor_id);
                         }
 
                     }
@@ -400,16 +400,16 @@ public class Visitor_Table {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        return signOutVisitor(studentPosition,visitor_id);
+        return signOutVisitor(studentPosition, visitor_id);
     }
 
     public int getTotalVisitors() {
-      return  getTotalVisitor();
+        return getTotalVisitor();
     }
 
     public int getTotalVisitorsYetToSignOut() {
-        int count=0;
-         try {
+        int count = 0;
+        try {
             URL url = new URL("https://smartentry-e8e2c.firebaseio.com/visitor_table.json");
             conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
@@ -422,16 +422,16 @@ public class Visitor_Table {
                     response = IOUtils.toString(in);
                     // JSONObject details = new JSONObject(response);
                     JSONArray visitors = new JSONArray(response);
-                   
+
                     for (int i = 0; i < visitors.length(); i++) {
                         JSONObject visitor = visitors.getJSONObject(i);
                         String time_out = visitor.getString("time_out");
-                        
-                        if(time_out.equals("Not yet")){
+
+                        if (time_out.equals("Not yet")) {
                             System.out.println(time_out);
-                         count++;
+                            count++;
                         }
-                     
+
                     }
 
                 } catch (IOException e) {
@@ -445,14 +445,13 @@ public class Visitor_Table {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-     
-        
+
         return count;
     }
 
     public int getTotalVisitorsSignedOut() {
-        int count=0;
-         try {
+        int count = 0;
+        try {
             URL url = new URL("https://smartentry-e8e2c.firebaseio.com/visitor_table.json");
             conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
@@ -465,15 +464,15 @@ public class Visitor_Table {
                     response = IOUtils.toString(in);
                     // JSONObject details = new JSONObject(response);
                     JSONArray visitors = new JSONArray(response);
-                   
+
                     for (int i = 0; i < visitors.length(); i++) {
                         JSONObject visitor = visitors.getJSONObject(i);
                         String time_out = visitor.getString("time_out");
-                        
-                        if(!time_out.equals("Not yet")){
-                         count++;
+
+                        if (!time_out.equals("Not yet")) {
+                            count++;
                         }
-                     
+
                     }
 
                 } catch (IOException e) {
@@ -487,8 +486,7 @@ public class Visitor_Table {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-     
-        
+
         return count;
     }
 
