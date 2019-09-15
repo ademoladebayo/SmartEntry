@@ -171,12 +171,12 @@ public class Student_Table {
                 if (status.equals("0")) {
                     // Notify the parent
                     SmartNotify sn = new SmartNotify ();
-                    String message = "Dear Guardian, \nyour ward "+ name[0].toUpperCase() +" "+name[1].toUpperCase()+", with Matriculation number "+name[2]+" got SIGNED-OUT of the school at exactly " + json.getString("Time")+". \n Notificaion is for you to keep track of your ward's  movement in and out of the school.\n\nBOWEN UNIVERSITY, \nIWO  OSUN STATE. ";
+                    String message = "Dear Guardian, \nyour ward "+ name[0].toUpperCase() +" "+name[1].toUpperCase()+", with Matriculation number "+name[2]+" got SIGNED-OUT of the school at exactly " + json.getString("Time")+". \n Notificaion is for you to keep track of your ward's  movement in and out of the school.";
                     sn.sendEmail( name[3],"EXIT NOTIFICATION",message);
                 } else {
                     // Notify the parent
                     SmartNotify sn = new SmartNotify ();
-                    String message = "Dear Guardian, \nyour ward "+name[0].toUpperCase() +" "+name[1].toUpperCase()+", with Matriculation number "+name[2]+" got SIGNED into the school at exactly " + json.getString("Time")+". \n Notificaion is for you to keep track of your ward's  movement in and out of the school.\n\nBOWEN UNIVERSITY, \nIWO  OSUN STATE. ";
+                    String message = "Dear Guardian, \nyour ward "+name[0].toUpperCase() +" "+name[1].toUpperCase()+", with Matriculation number "+name[2]+" got SIGNED into the school at exactly " + json.getString("Time")+". \n Notificaion is for you to keep track of your ward's  movement in and out of the school.";
                     sn.sendEmail( name[3],"ENTRY NOTIFICATION",message);
 
                 }
